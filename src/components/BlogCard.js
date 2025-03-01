@@ -25,13 +25,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { CiInstagram, CiTwitter } from "react-icons/ci";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/app/utils/axiosInstance";
 import { Button } from "./ui/button";
 
 const BLogCard = () => {
   const [blogPosts, setBlogPosts] = useState([]);
+  const [user, SetUser] = useState(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -42,6 +42,18 @@ const BLogCard = () => {
         console.error("Error fetching blogs:", error);
       }
     };
+
+    const fetchUser = async () => {
+      try {
+        const response = await axiosInstance.get("/auth/user/profile");
+        SetUser(response.data.user);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+
     fetchData();
   }, []);
 
@@ -76,10 +88,16 @@ const BLogCard = () => {
                   height={24}
                 />
                 <p className="text-xs">{post.author.name}</p>
-                <p className="text-xs">{new Date(post.createdAt).toLocaleString()}</p>
+                <p className="text-xs">
+                  {new Date(post.createdAt).toLocaleString()}
+                </p>
               </CardDescription>
               <CardTitle className="">
-                <h1 className="text-lg cursor-pointer font-bold md:text-2xl">{post.title}</h1>
+              <h1 className="text-lg cursor-pointer font-bold md:text-2xl md:w-[500px] w-44 
+               overflow-hidden text-ellipsis line-clamp-2">
+  {post.title}
+</h1>
+
               </CardTitle>
               <CardDescription className="text-sm w-32 md:w-96 overflow-hidden w whitespace-nowrap text-ellipsis  md:text-lg">
                 {post?.description}
@@ -94,9 +112,9 @@ const BLogCard = () => {
                   <li className="cursor-pointer text-gray-600 hover:text-black">
                     <FaRegComment size={20} />
                   </li>
-                      <li>
-                        <Share2 />
-                      </li>
+                  <li>
+                    <Share2 />
+                  </li>
                 </ul>
               </CardFooter>
             </CardContent>
@@ -105,9 +123,10 @@ const BLogCard = () => {
           {/* Blog Image */}
           <div className="flex flex-col gap-2  justify-start mr-3  items-center ">
             <div className="w-full flex justify-end">
-              <DropdownMenu className="outline-none">
-                <DropdownMenuTrigger className="outline-none">
-                  {" "}
+              <DropdownMenu>
+                {/* Add asChild prop to DropdownMenuTrigger */}
+                <DropdownMenuTrigger asChild className="outline-none">
+                  {/* This Button will now BECOME the trigger */}
                   <Button
                     variant="outline"
                     className="px-1 rounded-none shadow-none border-none bg-transparent"
@@ -115,15 +134,23 @@ const BLogCard = () => {
                     <EllipsisVertical />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="md:mr-28  mr-5">
-                  <DropdownMenuItem onClick={() => deletePost(post._id)}>
-                    <Trash /> Delete Post
-                  </DropdownMenuItem>
+                <DropdownMenuContent className="md:mr-28 mr-5">
+                  {user?._id === post.author._id ? (
+                    <DropdownMenuItem onClick={() => deletePost(post._id)}>
+                      <Trash className="mr-2 h-4 w-4" />
+                      <span>Delete Post</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem>
+                      <DeleteIcon className="mr-2 h-4 w-4" />
+                      <span>Report</span>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
             <Image
-              src={"/images.png"}
+              src={post.image || "/images.png"}
               className=" object-contain"
               alt={post.title}
               width={150}
